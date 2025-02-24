@@ -141,9 +141,42 @@ class InvertedIndexer:
 
     def generate_report(self):
         """Generates a PDF report with stats: # of documents, unique tokens, total index size, and partial index count."""
-        pass
+        
+        # Remove old report if it exists
+        if os.path.exists(self.report_file):
+            os.remove(self.report_file)
 
-# RUN WHEN EVERYTHING IS MADE!
+        # Load the final index file
+        final_index_path = os.path.join(self.index_dir, "final_index.json")
+        if not os.path.exists(final_index_path):
+            print("Error: Final index file not found. Run `merge_indexes()` first.")
+            return
+        
+        with open(final_index_path, 'r', encoding='utf-8') as f:
+            final_index = json.load(f)
+
+        num_docs = self.doc_count  # Total number of documents processed
+        num_unique_tokens = len(final_index)  # Unique terms count
+        total_index_size_kb = sum(os.path.getsize(f) for f in glob.glob(os.path.join(self.index_dir, "*.json"))) / 1024
+        num_partial_indexes = len(glob.glob(os.path.join(self.index_dir, "partial_index_*.json")))  # Count of partial indexes
+
+        # Create PDF
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        pdf.set_font("Arial", style="B", size=16)
+        pdf.cell(200, 10, "Inverted Index Report", ln=True, align="C")
+        pdf.ln(10)
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, f"Total Documents Indexed: {num_docs}", ln=True)
+        pdf.cell(200, 10, f"Unique Words in Index: {num_unique_tokens}", ln=True)
+        pdf.cell(200, 10, f"Total Index Size on Disk: {total_index_size_kb:.2f} KB", ln=True)
+        pdf.cell(200, 10, f"Number of Partial Indexes: {num_partial_indexes}", ln=True)
+
+        # Save the PDF report
+        pdf.output(self.report_file)
+        print(f"Report saved to: {self.report_file}")
+
 if __name__ == "__main__":
     input_directory = "developer"
     output_directory = "partial"
