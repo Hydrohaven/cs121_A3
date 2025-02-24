@@ -45,13 +45,16 @@ class InvertedIndexer:
         soup = BeautifulSoup(html_content, 'html.parser')
         important_text = []
 
-        if soup.title:
-            important_text.append(soup.title.text)
-        for tag in soup.find_all(["h1", "h2", "h3", "b", "strong"]):
+        if soup.title: # extract title
+            important_text.append(soup.title.text) 
+        for tag in soup.find_all(["h1", "h2", "h3", "b", "strong"]): # extracts headers and bold text
             important_text.append(tag.text)
 
+        # extracts normal words
+        body_text = soup.get_text()
+
         tokens = []
-        for text in important_text:
+        for text in important_text + [body_text]:
             words = re.findall(r'\b[a-zA-Z0-9]+\b', text.lower())  # Extract alphanumeric words
             tokens.extend([self.stemmer.stem(word) for word in words])  # Stem words
 
