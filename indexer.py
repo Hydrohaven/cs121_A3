@@ -38,7 +38,38 @@ class InvertedIndexer:
 
     def process_files(self):
         """Processes all JSON files, extracts terms, and builds the inverted index."""
-        pass
+
+        # If self.index_dir already exists, it delete it completely and creates a new empty directory to store new index
+        if os.path.exists(self.index_dir):
+            shutil.rmtree(self.index_dir)  # Deletes old index folder
+            os.makedirs(self.index_dir)  # Recreates a fresh directory
+
+        # Gets list of all JSON files that need to be processed
+        file_list = self.get_all_json_files()
+
+        # Loops over each JSON file and then opens and loads JSON file into data
+        for file_path in file_list:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                data = json.load(file)
+
+            url = data.get("url", file_path)  # Use URL or filename as document ID
+            html_content = data.get("content", "") # Retrieves the HTML content of the webpage
+
+            # Extracts tokens from the HTML Content
+            tokens = self.extract_tokens(html_content)
+            for token in tokens:
+                self.inverted_index[token][url] += 1  # Increment term frequency
+
+            self.doc_urls[url] = url
+            self.doc_count += 1
+
+            # Write partial index every N documents
+            if self.doc_count % self.chunk_size == 0:
+                self.write_partial_index()
+
+        # Write any remaining data
+        if self.inverted_index:
+        self.write_partial_index()
 
     def extract_tokens(self, html_content):
         """Extracts important text from HTML, tokenizes and stems words."""
