@@ -59,7 +59,7 @@ class InvertedIndexer:
 
     def write_partial_index(self):
         """Writes a partial inverted index to disk and clears memory."""
-                # file path for the partial index
+        # file path for the partial index
         partial_index_path = os.path.join(self.index_dir, f"partial_index_{self.partial_index_count}.json")
         
         # saves the current inverted index to a JSON file
@@ -76,7 +76,25 @@ class InvertedIndexer:
 
     def merge_indexes(self):
         """Merges all partial indexes into a final inverted index."""
-        pass
+        final_index = defaultdict(lambda: defaultdict(int)) # Creates dictionary where follows this format {tokens: {doc_ID,  term_freq}}
+        partial_files = glob.glob(os.path.join(self.index_dir, "partial_index_*.json")) # Find all JSON files named "partial_index_*.json"
+
+        # Loops through each partial index file and loads it using json.load(f)
+        for file in partial_files:
+            with open(file, 'r', encoding='utf-8') as f:
+                partial_index = json.load(f) # Python dictionary representing part of inverted index
+
+            # Iterates through each token in the partial_index
+            for term, postings in partial_index.items():
+                for doc_id, freq in postings.items():
+                    final_index[term][doc_id] += freq # Adds frequency value to final_index to merge counts
+
+        # Save merged final_index as a JSON file in self.index_dir
+        final_index_path = os.path.join(self.index_dir, "final_index.json") 
+        with open(final_index_path, 'w', encoding='utf-8') as f:
+            json.dump(final_index, f)
+
+print(f"Merged index saved: {final_index_path}")
 
     def generate_report(self):
         """Generates a PDF report with stats: # of documents, unique tokens, total index size, and partial index count."""
