@@ -59,6 +59,20 @@ class InvertedIndexer:
 
     def write_partial_index(self):
         """Writes a partial inverted index to disk and clears memory."""
+                # file path for the partial index
+        partial_index_path = os.path.join(self.index_dir, f"partial_index_{self.partial_index_count}.json")
+        
+        # saves the current inverted index to a JSON file
+        with open(partial_index_path, 'w', encoding='utf-8') as f:
+            json.dump(self.inverted_index, f)
+
+        print(f"Saved partial index: {partial_index_path}")
+
+        # clears the memory inverted index 
+        self.inverted_index.clear()
+
+        # increment the partial index counter
+        self.partial_index_count += 1
 
     def merge_indexes(self):
         """Merges all partial indexes into a final inverted index."""
