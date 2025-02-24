@@ -69,7 +69,7 @@ class InvertedIndexer:
 
         # Write any remaining data
         if self.inverted_index:
-        self.write_partial_index()
+            self.write_partial_index()
 
     def extract_tokens(self, html_content):
         """Extracts important text from HTML, tokenizes and stems words."""
@@ -93,6 +93,11 @@ class InvertedIndexer:
 
     def write_partial_index(self):
         """Writes a partial inverted index to disk and clears memory."""
+
+        # error handling if index is empty
+        if not self.inverted_index:
+            return
+        
         # file path for the partial index
         partial_index_path = os.path.join(self.index_dir, f"partial_index_{self.partial_index_count}.json")
         
