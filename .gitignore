@@ -1,2 +1,4 @@
 developer/
 env/
+partial/
+reporter.py

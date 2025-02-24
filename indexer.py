@@ -1,51 +1,67 @@
-# No Lucene PyLucene or ElasticSearch
-
-import re
-import json
 import os
-import math
-import lxml
-from bs4 import BeautifulSoup
+import json
+import glob
+import re
+import shutil
 from collections import defaultdict
-from nltk.stem.porter import PorterStemmer
-from nltk.tokenize import word_tokenize
+from bs4 import BeautifulSoup
+from nltk.stem import PorterStemmer
+from fpdf import FPDF 
 
+class InvertedIndexer:
+    def __init__(self, input_dir, index_dir, chunk_size=500, report_file="index_report.pdf"):
+        """
+        Initializes the indexer.
 
-# Inverted Indexer
-class Indexer():
-    # Step 0: Initialize Class
-    def __init__(self) -> None:
-        self.dev_directory = r"./developer"  # JSON files directory
-        self.document_id = 0
-        self.inverted_index = defaultdict(list)  # inverted_index = {key: token, value: document_id, freq, importance, tf_idf}
-        self.url_map = {}  # url_map = {key: document_id, value: url
-        self.processed_hashes = (set())  # Store the hash of pages; detect and eliminate duplicate pages.
-        self.word_stemmer = PorterStemmer()  # Create an instance of PorterStemmer
-        self.inv_index_location = defaultdict(int)  # allow the usage of seek() when searching word
+        - input_dir: Directory containing website folders with JSON files.
+        - index_dir: Directory to store inverted index files.
+        - chunk_size: Number of documents processed before writing a partial index.
+        - report_file: Path for the generated report (PDF).
+        """
 
-    # Step 1: Initialize a Dictionary that will contain tokens and its respective list of postings
+        self.input_dir = input_dir
+        self.index_dir = index_dir
+        self.chunk_size = chunk_size
+        self.report_file = report_file
+        self.inverted_index = defaultdict(lambda: defaultdict(int))  # {term: {doc_id: frequency}}
+        self.stemmer = PorterStemmer()
+        self.doc_count = 0
+        self.partial_index_count = 0
+        self.doc_urls = {}  # {doc_id: URL}
 
-        # List of Postings: Each document is represented by let's say for now a number. Each posting represents
-        #                   the number that the token appears in.
+        if not os.path.exists(index_dir):
+            os.makedirs(index_dir)
 
-    def open_json_files():
-        dev_folder = '/developer' # Developer folder path
-        for json_file in dev_folder.rglob("*.json"):
-            with json_file.open("r") as file:
-                print(json_file)
-                break
+    def get_all_json_files(self):
+        """Recursively finds all JSON files inside the nested directories."""
+        pass
 
-    # Step 2: Create tokens from the HTML? files. Read over JSONs and identify tokens.
+    def process_files(self):
+        """Processes all JSON files, extracts terms, and builds the inverted index."""
+        pass
 
-    # Step 3: While looping over JSON files for token, add their respective document it appears to the Posting List
+    def extract_tokens(self, html_content):
+        """Extracts important text from HTML, tokenizes (without `punkt`), and stems words."""
+        pass
 
-    # Step 4: Print number of indexed documents (Should be 55,393)
+    def write_partial_index(self):
+        """Writes a partial inverted index to disk and clears memory."""
+        pass
 
-    # Step 5: Print the number of unique words you found
+    def merge_indexes(self):
+        """Merges all partial indexes into a final inverted index."""
+        pass
 
-    # Step 6: Total Size of Index (KB) in the disk 
+    def generate_report(self):
+        """Generates a PDF report with stats: # of documents, unique tokens, total index size, and partial index count."""
+        pass
 
-def main():
-    indexer_obj = Indexer()
-    indexer_obj.open_json_files()
-    
+# RUN WHEN EVERYTHING IS MADE!
+if __name__ == "__main__":
+    input_directory = "developer"
+    output_directory = "partial"
+
+    indexer = InvertedIndexer(input_directory, output_directory)
+    indexer.process_files()  # Build inverted index
+    indexer.merge_indexes()  # Merge partial indexes
+    indexer.generate_report()  # Generate the required report
