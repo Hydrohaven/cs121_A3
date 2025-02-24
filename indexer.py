@@ -41,12 +41,24 @@ class InvertedIndexer:
         pass
 
     def extract_tokens(self, html_content):
-        """Extracts important text from HTML, tokenizes (without `punkt`), and stems words."""
-        pass
+        """Extracts important text from HTML, tokenizes and stems words."""
+        soup = BeautifulSoup(html_content, 'html.parser')
+        important_text = []
+
+        if soup.title:
+            important_text.append(soup.title.text)
+        for tag in soup.find_all(["h1", "h2", "h3", "b", "strong"]):
+            important_text.append(tag.text)
+
+        tokens = []
+        for text in important_text:
+            words = re.findall(r'\b[a-zA-Z0-9]+\b', text.lower())  # Extract alphanumeric words
+            tokens.extend([self.stemmer.stem(word) for word in words])  # Stem words
+
+        return tokens
 
     def write_partial_index(self):
         """Writes a partial inverted index to disk and clears memory."""
-        pass
 
     def merge_indexes(self):
         """Merges all partial indexes into a final inverted index."""
