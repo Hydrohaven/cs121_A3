@@ -19,9 +19,9 @@ class InvertedIndexer:
         - report_file: Path for the generated report (PDF).
         """
 
-        self.input_dir = input_dir
+        self.input_dir = input_dir # Directory to open and process
         self.index_dir = index_dir
-        self.chunk_size = chunk_size
+        self.chunk_size = chunk_size # Chunk size on what we are looping, avoiding using too much memory
         self.report_file = report_file
         self.inverted_index = defaultdict(lambda: defaultdict(int))  # {term: {doc_id: frequency}}
         self.stemmer = PorterStemmer()
@@ -34,7 +34,7 @@ class InvertedIndexer:
 
     def get_all_json_files(self):
         """Recursively finds all JSON files inside the nested directories."""
-        pass
+        return glob.glob(os.path.join(self.input_dir, '**', '*.json'), recursive=True)
 
     def process_files(self):
         """Processes all JSON files, extracts terms, and builds the inverted index."""
