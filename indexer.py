@@ -4,6 +4,7 @@ import glob
 import re
 import shutil
 import math
+import requests
 from collections import defaultdict
 from bs4 import BeautifulSoup
 from nltk.stem import PorterStemmer
@@ -39,6 +40,21 @@ class InvertedIndexer:
     def get_all_json_files(self):
         """Recursively finds all JSON files inside the nested directories."""
         return glob.glob(os.path.join(self.input_dir, '**', '*.json'), recursive=True)
+    
+    def _get_final_url(self, url, *, max_redirects=5):
+        """Returns the final redirected URL if accessible, otherwise None."""
+        try:
+            response = requests.head(url, allow_redirects=True, timeout=2)
+
+            if response.history and len(response.history) > max_redirects:
+                return None
+            
+            return response.url if response.status_code == 200 else None 
+        except requests.RequestException:
+            return None 
+        except requests.exceptions.TooManyRedirects:
+            print("Too many redirects!")
+            return None
 
     def process_files(self):
         """Processes all JSON files, extracts terms, and builds the inverted index."""
@@ -57,6 +73,12 @@ class InvertedIndexer:
                 data = json.load(file)
 
             url = data.get("url", file_path)  # Use URL or filename as document ID
+
+            final_url = self._get_final_url(url)
+
+            if not final_url:
+                continue
+
             html_content = data.get("content", "") # Retrieves the HTML content of the webpage
 
             # Extracts tokens from the HTML Content
@@ -64,13 +86,13 @@ class InvertedIndexer:
 
             unique_terms = set()  # Track unique terms in the document
             for token in tokens:
-                self.inverted_index[token][url]["tf"] += 1  
+                self.inverted_index[token][final_url]["tf"] += 1  
                 unique_terms.add(token)  
 
             for term in unique_terms:
                 self.document_frequencies[term] += 1  
 
-            self.doc_urls[url] = url
+            self.doc_urls[final_url] = final_url
             self.doc_count += 1
 
             # Write partial index every N documents
@@ -202,7 +224,7 @@ class InvertedIndexer:
 
 if __name__ == "__main__":
     input_directory = "developer"
-    output_directory = "partial"
+    output_directory = "partial_test"
 
     indexer = InvertedIndexer(input_directory, output_directory)
     indexer.process_files()  # Build inverted index

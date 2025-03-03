@@ -1,5 +1,6 @@
 developer/
 env/
 partial/
+partial_test/
 test.py
 read.py
