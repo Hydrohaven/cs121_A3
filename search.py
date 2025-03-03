@@ -96,8 +96,27 @@ class SearchEngine:
 
 
     def search(self, query):
-        """Performs a search and returns the top 5 document URLs."""
-        pass
+        """Performs a search and returns the top 5 document URLs."""        
+        self.start_timer()
+        results = self.boolean_and_search(query)
+        elapsed_time = time.perf_counter() - self._start_time
+
+        # valid_results = []  # Stores valid (non-404) results
+        # for doc_id in results:
+        #     if self._check_url_validity(doc_id):
+        #         valid_results.append(doc_id)
+
+        #     if len(valid_results) == 5:
+        #         break
+
+        # if not valid_results:
+        #     print("No valid results found (all top results were 404s).")
+        #     return
+
+        for rank, doc_id in enumerate(results[:5], 1):
+            print(f"{rank}. {doc_id}")
+        
+        print(f"Elapsed time: {elapsed_time:.6f} seconds")  # Print after query execution
 
 
     def generate_report(self):
