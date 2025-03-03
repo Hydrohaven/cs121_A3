@@ -56,7 +56,33 @@ class SearchEngine:
 
     def boolean_and_search(self, query):
         """Processes a Boolean AND search and ranks results using Cosine Similarity."""
-        pass
+        query_terms = self.tokenize_and_stem(query)
+        if not query_terms:
+            return [] 
+        
+        # get posting list for each term
+        posting_list = [set(self.index.get(term, {}).keys()) for term in query_terms]
+        common_docs = set.intersection(*posting_list) if posting_list else set()
+
+        if not common_docs:
+            return []
+        
+        # create doc vectors and query vector
+        doc_vectors = {}
+        query_vector = np.array([1] * len(query_terms)) # query vector is binary (each term contributes evenly)
+
+        for doc_id in common_docs:
+            doc_vectors[doc_id] = np.array([
+                self.index[term][doc_id]["tf-idf"] if doc_id in self.index[term] else 0 for term in query_terms])
+            
+        # compute cosine similarity
+        ranked_results = sorted(
+            common_docs,
+            key=lambda doc: np.dot(doc_vectors[doc], query_vector) / (np.linalg.norm(doc_vectors[doc]) * np.linalg.norm(query_vector) + 1e-9),  # Avoid division by zero
+            reverse=True
+        )
+
+        return ranked_results
 
 
     def _check_url_validity(self, url):
