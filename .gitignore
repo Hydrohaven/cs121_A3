@@ -4,3 +4,4 @@ partial/
 partial_test/
 test.py
 read.py
+.DS_Store
