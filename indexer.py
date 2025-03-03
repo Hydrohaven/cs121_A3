@@ -151,7 +151,7 @@ class InvertedIndexer:
 
         for term, postings in self.inverted_index.items():
             df = self.document_frequencies[term]  
-            idf = math.log(total_documents / (df + 1)) if df > 0 else 0  
+            idf = math.log(total_documents / df if df > 0 else 0  
 
             for doc_id, data in postings.items():
                 tf = 1 + math.log10(data["tf"]) if data["tf"] > 0 else 0  
