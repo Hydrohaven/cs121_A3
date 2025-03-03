@@ -1,4 +1,5 @@
 developer/
 env/
 partial/
-reporter.py
+test.py
+read.py
