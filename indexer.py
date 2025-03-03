@@ -3,6 +3,7 @@ import json
 import glob
 import re
 import shutil
+import math
 from collections import defaultdict
 from bs4 import BeautifulSoup
 from nltk.stem import PorterStemmer
@@ -23,11 +24,14 @@ class InvertedIndexer:
         self.index_dir = index_dir
         self.chunk_size = chunk_size # Chunk size on what we are looping, avoiding using too much memory
         self.report_file = report_file
-        self.inverted_index = defaultdict(lambda: defaultdict(int))  # {term: {doc_id: frequency}}
+
+        # Now stores both TF and TF-IDF
+        self.inverted_index = defaultdict(lambda: defaultdict(lambda: {"tf": 0, "tf-idf": 0}))
         self.stemmer = PorterStemmer()
         self.doc_count = 0
         self.partial_index_count = 0
-        self.doc_urls = {}  # {doc_id: URL}
+        self.doc_urls = {}  
+        self.document_frequencies = defaultdict(int)  # Tracks number of documents each term appears in
 
         if not os.path.exists(index_dir):
             os.makedirs(index_dir)
@@ -57,8 +61,14 @@ class InvertedIndexer:
 
             # Extracts tokens from the HTML Content
             tokens = self.extract_tokens(html_content)
+
+            unique_terms = set()  # Track unique terms in the document
             for token in tokens:
-                self.inverted_index[token][url] += 1  # Increment term frequency
+                self.inverted_index[token][url]["tf"] += 1  
+                unique_terms.add(token)  
+
+            for term in unique_terms:
+                self.document_frequencies[term] += 1  
 
             self.doc_urls[url] = url
             self.doc_count += 1
@@ -113,9 +123,21 @@ class InvertedIndexer:
         # increment the partial index counter
         self.partial_index_count += 1
 
+    def compute_tf_idf(self):
+        """Computes TF-IDF scores for each term in the index."""
+        total_documents = self.doc_count  
+
+        for term, postings in self.inverted_index.items():
+            df = self.document_frequencies[term]  
+            idf = math.log(total_documents / (df + 1)) if df > 0 else 0  
+
+            for doc_id, data in postings.items():
+                tf = 1 + math.log10(data["tf"]) if data["tf"] > 0 else 0  
+                self.inverted_index[term][doc_id]["tf-idf"] = tf * idf  
+
     def merge_indexes(self):
-        """Merges all partial indexes into a final inverted index."""
-        final_index = defaultdict(lambda: defaultdict(int))  # Final merged index {term: {doc_id: freq}}
+        """Merges all partial indexes into a final inverted index and computes TF-IDF."""
+        final_index = defaultdict(lambda: defaultdict(lambda: {"tf": 0, "tf-idf": 0}))  
 
         # get partial indexes from directory
         partial_files = glob.glob(os.path.join(self.index_dir, "partial_index_*.json"))
@@ -123,26 +145,27 @@ class InvertedIndexer:
         # loop through each partial index file
         for file in partial_files:
             with open(file, 'r', encoding='utf-8') as f:
-                partial_index = json.load(f)  
+                partial_index = json.load(f)
 
             # merge the partial index into the final index
             for term, postings in partial_index.items():
-                for doc_id, freq in postings.items():
-                    final_index[term][doc_id] += freq  # combines term frequencies
+                for doc_id, data in postings.items():
+                    final_index[term][doc_id]["tf"] += data["tf"]
 
-        # final index path
+        self.inverted_index = final_index
+
+        self.compute_tf_idf()  
+
         final_index_path = os.path.join(self.index_dir, "final_index.json")
 
         # save final index path to json file
         with open(final_index_path, 'w', encoding='utf-8') as f:
-            json.dump(final_index, f)
+            json.dump(self.inverted_index, f)  
 
         print(f"Merged index saved: {final_index_path}")
 
     def generate_report(self):
-        """Generates a PDF report with stats: # of documents, unique tokens, total index size, and partial index count."""
-        
-        # Remove old report if it exists
+        """Generates a PDF report with indexing stats."""
         if os.path.exists(self.report_file):
             os.remove(self.report_file)
 
