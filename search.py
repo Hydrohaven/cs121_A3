@@ -50,7 +50,8 @@ class SearchEngine:
 
     def tokenize_and_stem(self, query):
         """Tokenizes and stems a search query."""
-        pass
+        words = re.findall(r'\b[a-zA-Z0-9]+\b', query.lower())  # Extract words
+        return [self.stemmer.stem(word) for word in words]  # Apply stemming
 
 
     def boolean_and_search(self, query):
