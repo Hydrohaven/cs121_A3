@@ -50,11 +50,11 @@ class InvertedIndexer:
                 return None
             
             return response.url if response.status_code == 200 else None 
-        except requests.RequestException:
-            return None 
         except requests.exceptions.TooManyRedirects:
             print("Too many redirects!")
             return None
+        except requests.RequestException:
+            return None 
 
     def process_files(self):
         """Processes all JSON files, extracts terms, and builds the inverted index."""
@@ -151,7 +151,7 @@ class InvertedIndexer:
 
         for term, postings in self.inverted_index.items():
             df = self.document_frequencies[term]  
-            idf = math.log(total_documents / df if df > 0 else 0  
+            idf = math.log(total_documents / df) if df > 0 else 0  
 
             for doc_id, data in postings.items():
                 tf = 1 + math.log10(data["tf"]) if data["tf"] > 0 else 0  
