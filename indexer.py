@@ -41,20 +41,31 @@ class InvertedIndexer:
         """Recursively finds all JSON files inside the nested directories."""
         return glob.glob(os.path.join(self.input_dir, '**', '*.json'), recursive=True)
     
-    def _get_final_url(self, url, *, max_redirects=5):
+    def _get_final_url(self, url, *, max_redirects=3):
         """Returns the final redirected URL if accessible, otherwise None."""
         try:
-            response = requests.head(url, allow_redirects=True, timeout=2)
-
-            if response.history and len(response.history) > max_redirects:
+            response = requests.head(url, allow_redirects=True, timeout=1)
+            
+            if response.status_code >= 400:
+                print("ERROR: 4xx-5xx response code")
                 return None
+
+            content_type = response.headers.get("Content-Type", "").lower()
+            if "text/html" not in content_type:
+                print(f"[WARN] Non-HTML content ({content_type}): {url}")
+                return None
+
             
             return response.url if response.status_code == 200 else None 
         except requests.exceptions.TooManyRedirects:
             print("Too many redirects!")
             return None
-        except requests.RequestException:
-            return None 
+        except requests.exceptions.ConnectionError:
+            print(f"[ERROR] Connection failed: {url}")
+            return None
+        except requests.exceptions.Timeout:
+            print(f"[ERROR] Timeout: {url}")
+            return None
 
     def process_files(self):
         """Processes all JSON files, extracts terms, and builds the inverted index."""
