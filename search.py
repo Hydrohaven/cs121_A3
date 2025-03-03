@@ -44,7 +44,8 @@ class SearchEngine:
 
     def load_index(self):
         """Loads the inverted index from final_index.json."""
-        pass
+        with open(self.index_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
         
 
     def tokenize_and_stem(self, query):
