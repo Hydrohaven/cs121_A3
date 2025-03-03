@@ -122,6 +122,46 @@ class SearchEngine:
     def generate_report(self):
         """Generates a PDF report containing the top 5 search results for predefined queries."""
         
+        queries = [
+            "Iftekhar Ahmed",
+            "machine learning",
+            "ACM",
+            "master of software engineering"
+        ]
+
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        pdf.set_font("Arial", style="B", size=16)
+        pdf.cell(200, 10, "Search Engine Report", ln=True, align="C")
+        pdf.ln(10)
+
+        # Run each query and record results
+        for query in queries:
+            pdf.set_font("Arial", style="B", size=12)
+            pdf.cell(200, 10, f"Query: {query}", ln=True)
+            
+            self.start_timer()
+            results = self.boolean_and_search(query)
+            elapsed_time = time.perf_counter() - self._start_time  # Capture time immediately after search
+
+            pdf.set_font("Arial", size=12)
+            pdf.cell(200, 10, f"Elapsed time: {elapsed_time:.6f} seconds", ln=True)
+            pdf.ln(5)
+
+            if not results:
+                pdf.cell(200, 10, "No results found.", ln=True)
+            else:
+                for rank, doc_id in enumerate(results[:5], 1):
+                    pdf.cell(200, 10, f"{rank}. {doc_id}", ln=True)
+
+            pdf.ln(10)  # Add some space between queries
+
+        # Save the report as a PDF file
+        report_filename = "search_report.pdf"
+        pdf.output(report_filename)
+        print(f"Report saved as {report_filename}!")
+        
 
 
 if __name__ == "__main__":
