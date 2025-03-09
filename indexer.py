@@ -4,11 +4,15 @@ import glob
 import re
 import shutil
 import math
+import numpy as np
 import requests
 from collections import defaultdict
 from bs4 import BeautifulSoup
 from nltk.stem import PorterStemmer
 from fpdf import FPDF 
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import hashlib
 
 class InvertedIndexer:
     def __init__(self, input_dir, index_dir, chunk_size=500, report_file="index_report.pdf"):
@@ -33,9 +37,11 @@ class InvertedIndexer:
         self.partial_index_count = 0
         self.doc_urls = {}  
         self.document_frequencies = defaultdict(int)  # Tracks number of documents each term appears in
+        self.simhashes = {}
 
         if not os.path.exists(index_dir):
             os.makedirs(index_dir)
+
 
     def get_all_json_files(self):
         """Recursively finds all JSON files inside the nested directories."""
@@ -86,13 +92,22 @@ class InvertedIndexer:
                 data = json.load(file)
 
             url = data.get("url", file_path)  # Use URL or filename as document ID
-
             final_url = self._get_final_url(url)
-
             if not final_url:
                 continue
 
             html_content = data.get("content", "") # Retrieves the HTML content of the webpage
+
+            # Compute SimHash for near-duplicate detection
+            content_simhash = self.simhash(html_content)
+
+            # Check if similar SimHash already exists
+            if any(self.hamming_distance(content_simhash, existing_simhash) < 5 for existing_simhash in self.simhashes.values()):
+                print(f"Skipping near-duplicate page: {final_url}")
+                continue  # Skip near-duplicate pages
+
+            # Store the SimHash value
+            self.simhashes[final_url] = content_simhash
 
             # Extracts tokens from the HTML Content
             tokens = self.extract_tokens(html_content)
@@ -198,6 +213,30 @@ class InvertedIndexer:
             json.dump(self.inverted_index, f)  
 
         print(f"Merged index saved: {final_index_path}")
+    
+    def simhash(self, text):
+        """Generate a 64-bit SimHash fingerprint for the given text."""
+        words = text.split()
+        hash_bits = np.zeros(64)
+
+        for word in words:
+            hash_value = int(hashlib.md5(word.encode()).hexdigest(), 16)
+            for i in range(64):
+                if (hash_value >> i) & 1:
+                    hash_bits[i] += 1
+                else:
+                    hash_bits[i] -= 1
+
+        fingerprint = 0
+        for i in range(64):
+            if hash_bits[i] > 0:
+                fingerprint |= (1 << i)
+
+        return fingerprint
+
+    def hamming_distance(self, hash1, hash2):
+        """Compute Hamming distance between two SimHash fingerprints."""
+        return bin(hash1 ^ hash2).count('1')
 
     def generate_report(self):
         """Generates a PDF report with indexing stats."""
@@ -237,7 +276,7 @@ class InvertedIndexer:
 
 if __name__ == "__main__":
     input_directory = "developer"
-    output_directory = "no_redirect"
+    output_directory = "hash_test"
 
     indexer = InvertedIndexer(input_directory, output_directory)
     indexer.process_files()  # Build inverted index
