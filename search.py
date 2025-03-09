@@ -85,33 +85,11 @@ class SearchEngine:
         return ranked_results
 
 
-    def _check_url_validity(self, url):
-        """Returns True if the URL is accessible (not a 404 page), otherwise False."""
-        try:
-            response = requests.head(url, allow_redirects=True, timeout=3)  # Send a lightweight HEAD request
-            # print("URL:", url, "HTTP RESPONSE:", response) # DEBUG STATEMENT
-            return response.status_code == 200  # Only return True for 200 OK responses
-        except requests.RequestException:
-            return False  # Handles timeouts, connection errors, etc.
-
-
     def search(self, query):
         """Performs a search and returns the top 5 document URLs."""        
         self.start_timer()
         results = self.boolean_and_search(query)
         elapsed_time = time.perf_counter() - self._start_time
-
-        # valid_results = []  # Stores valid (non-404) results
-        # for doc_id in results:
-        #     if self._check_url_validity(doc_id):
-        #         valid_results.append(doc_id)
-
-        #     if len(valid_results) == 5:
-        #         break
-
-        # if not valid_results:
-        #     print("No valid results found (all top results were 404s).")
-        #     return
 
         for rank, doc_id in enumerate(results[:5], 1):
             print(f"{rank}. {doc_id}")
@@ -165,7 +143,7 @@ class SearchEngine:
 
 
 if __name__ == "__main__":
-    search_engine = SearchEngine("partial/final_index.json")
+    search_engine = SearchEngine("partial_test/final_index.json")
 
     choice = input("\nWould you like to run the searcher or generate the report (run/report)?: ").strip()
     if choice == "report":
