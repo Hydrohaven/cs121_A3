@@ -1,10 +1,37 @@
 import os
+import boto3
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 import time
 from search import SearchEngine
 import uvicorn
+
+# Set up AWS S3 client using your AWS credentials (either through environment variables or hardcoded)
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),  # From environment variables
+    aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),  # From environment variables
+)
+
+# S3 bucket details
+bucket_name = "your-bucket-name"  # Replace with your S3 bucket name
+s3_file_name = "final_index.json"
+index_path = "partial_test/final_index.json"
+
+# Function to download the file from S3
+def download_index_from_s3():
+    try:
+        print(f"Downloading {s3_file_name} from S3...")
+        s3.download_file(bucket_name, s3_file_name, index_path)
+        print(f"Downloaded {s3_file_name} successfully!")
+    except Exception as e:
+        print(f"Error downloading file from S3: {e}")
+
+# Ensure that the final_index.json exists, or regenerate/download it
+if not os.path.exists(index_path):
+    print(f"{index_path} not found, downloading from S3...")
+    download_index_from_s3()
 
 
 app = FastAPI()
@@ -20,7 +47,6 @@ templates = Jinja2Templates(directory="templates")
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-
 @app.post("/search", response_class=HTMLResponse)
 async def search(request: Request, query: str = Form(...)):
     start_time = time.perf_counter()
@@ -31,7 +57,6 @@ async def search(request: Request, query: str = Form(...)):
     return templates.TemplateResponse(
         "index.html", {"request": request, "query": query, "results": results, "elapsed_time": formatted_elapsed_time}
     )
-
 
 @app.get("/generate_report", response_class=FileResponse)
 async def generate_report():
