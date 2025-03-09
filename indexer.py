@@ -42,29 +42,31 @@ class InvertedIndexer:
         return glob.glob(os.path.join(self.input_dir, '**', '*.json'), recursive=True)
     
     def _get_final_url(self, url, *, max_redirects=3):
+        # return url;
+        debug = False
         """Returns the final redirected URL if accessible, otherwise None."""
         try:
             response = requests.head(url, allow_redirects=True, timeout=1)
             
             if response.status_code >= 400:
-                print("ERROR: 4xx-5xx response code")
+                if debug: print("ERROR: 4xx-5xx response code")
                 return None
 
             content_type = response.headers.get("Content-Type", "").lower()
             if "text/html" not in content_type:
-                print(f"[WARN] Non-HTML content ({content_type}): {url}")
+                if debug: print(f"[WARN] Non-HTML content ({content_type}): {url}")
                 return None
 
             
             return response.url if response.status_code == 200 else None 
         except requests.exceptions.TooManyRedirects:
-            print("Too many redirects!")
+            if debug: print("Too many redirects!")
             return None
         except requests.exceptions.ConnectionError:
-            print(f"[ERROR] Connection failed: {url}")
+            if debug: print(f"[ERROR] Connection failed: {url}")
             return None
         except requests.exceptions.Timeout:
-            print(f"[ERROR] Timeout: {url}")
+            if debug: print(f"[ERROR] Timeout: {url}")
             return None
 
     def process_files(self):
@@ -235,7 +237,7 @@ class InvertedIndexer:
 
 if __name__ == "__main__":
     input_directory = "developer"
-    output_directory = "partial_test"
+    output_directory = "no_redirect"
 
     indexer = InvertedIndexer(input_directory, output_directory)
     indexer.process_files()  # Build inverted index
