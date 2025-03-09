@@ -5,6 +5,7 @@ import numpy as np
 import requests
 from fpdf import FPDF
 from nltk.stem import PorterStemmer
+from transformers import pipeline
 
 class SearchEngine:
     def __init__(self, index_path):
@@ -165,7 +166,7 @@ class SearchEngine:
 
 
 if __name__ == "__main__":
-    search_engine = SearchEngine("partial/final_index.json")
+    search_engine = SearchEngine("partial_test/final_index.json")
 
     choice = input("\nWould you like to run the searcher or generate the report (run/report)?: ").strip()
     if choice == "report":
