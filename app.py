@@ -4,6 +4,8 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 import time
 from search import SearchEngine
+import uvicorn
+
 
 app = FastAPI()
 
@@ -35,3 +37,8 @@ async def search(request: Request, query: str = Form(...)):
 async def generate_report():
     search_engine.generate_report()
     return FileResponse("search_report.pdf", media_type="application/pdf", filename="search_report.pdf")
+
+if __name__ == "__main__":
+    # Get the port from the environment variable or use 8000 as a fallback
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
