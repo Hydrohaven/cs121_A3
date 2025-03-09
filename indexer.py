@@ -5,14 +5,12 @@ import re
 import shutil
 import math
 import numpy as np
-import requests
 from collections import defaultdict
 from bs4 import BeautifulSoup
-from nltk.stem import PorterStemmer
-from fpdf import FPDF 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import hashlib
+import nltk
+from nltk.corpus import wordnet
+from nltk.stem import WordNetLemmatizer
+from fpdf import FPDF
 
 class InvertedIndexer:
     def __init__(self, input_dir, index_dir, chunk_size=500, report_file="index_report.pdf"):
@@ -24,6 +22,8 @@ class InvertedIndexer:
         - chunk_size: Number of documents processed before writing a partial index.
         - report_file: Path for the generated report (PDF).
         """
+        nltk.download("wordnet")
+        nltk.download("omw-1.4")
 
         self.input_dir = input_dir # Directory to open and process
         self.index_dir = index_dir
@@ -32,7 +32,7 @@ class InvertedIndexer:
 
         # Now stores both TF and TF-IDF
         self.inverted_index = defaultdict(lambda: defaultdict(lambda: {"tf": 0, "tf-idf": 0}))
-        self.stemmer = PorterStemmer()
+        self.lemmatizer = WordNetLemmatizer() # much better than stemmer, ensures real english words 
         self.doc_count = 0
         self.partial_index_count = 0
         self.doc_urls = {}  
@@ -47,33 +47,6 @@ class InvertedIndexer:
         """Recursively finds all JSON files inside the nested directories."""
         return glob.glob(os.path.join(self.input_dir, '**', '*.json'), recursive=True)
     
-    def _get_final_url(self, url, *, max_redirects=3):
-        # return url;
-        debug = False
-        """Returns the final redirected URL if accessible, otherwise None."""
-        try:
-            response = requests.head(url, allow_redirects=True, timeout=1)
-            
-            if response.status_code >= 400:
-                if debug: print("ERROR: 4xx-5xx response code")
-                return None
-
-            content_type = response.headers.get("Content-Type", "").lower()
-            if "text/html" not in content_type:
-                if debug: print(f"[WARN] Non-HTML content ({content_type}): {url}")
-                return None
-
-            
-            return response.url if response.status_code == 200 else None 
-        except requests.exceptions.TooManyRedirects:
-            if debug: print("Too many redirects!")
-            return None
-        except requests.exceptions.ConnectionError:
-            if debug: print(f"[ERROR] Connection failed: {url}")
-            return None
-        except requests.exceptions.Timeout:
-            if debug: print(f"[ERROR] Timeout: {url}")
-            return None
 
     def process_files(self):
         """Processes all JSON files, extracts terms, and builds the inverted index."""
@@ -92,35 +65,20 @@ class InvertedIndexer:
                 data = json.load(file)
 
             url = data.get("url", file_path)  # Use URL or filename as document ID
-            final_url = self._get_final_url(url)
-            if not final_url:
-                continue
-
             html_content = data.get("content", "") # Retrieves the HTML content of the webpage
-
-            # Compute SimHash for near-duplicate detection
-            content_simhash = self.simhash(html_content)
-
-            # Check if similar SimHash already exists
-            if any(self.hamming_distance(content_simhash, existing_simhash) < 5 for existing_simhash in self.simhashes.values()):
-                print(f"Skipping near-duplicate page: {final_url}")
-                continue  # Skip near-duplicate pages
-
-            # Store the SimHash value
-            self.simhashes[final_url] = content_simhash
 
             # Extracts tokens from the HTML Content
             tokens = self.extract_tokens(html_content)
 
             unique_terms = set()  # Track unique terms in the document
             for token in tokens:
-                self.inverted_index[token][final_url]["tf"] += 1  
+                self.inverted_index[token][url]["tf"] += 1  
                 unique_terms.add(token)  
 
             for term in unique_terms:
                 self.document_frequencies[term] += 1  
 
-            self.doc_urls[final_url] = final_url
+            self.doc_urls[url] = url
             self.doc_count += 1
 
             # Write partial index every N documents
@@ -143,35 +101,33 @@ class InvertedIndexer:
 
         # extracts normal words
         body_text = soup.get_text()
-
         tokens = []
+
         for text in important_text + [body_text]:
             words = re.findall(r'\b[a-zA-Z0-9]+\b', text.lower())  # Extract alphanumeric words
-            tokens.extend([self.stemmer.stem(word) for word in words])  # Stem words
+            lemmatized_words = [self.lemmatizer.lemmatize(word) for word in words]  # Apply lemmatization
+            tokens.extend(lemmatized_words)
 
         return tokens
 
     def write_partial_index(self):
-        """Writes a partial inverted index to disk and clears memory."""
-
-        # error handling if index is empty
+        """Writes a partial inverted index to disk using JSONL format."""
+        
         if not self.inverted_index:
-            return
+            return  # Don't write an empty index
         
-        # file path for the partial index
-        partial_index_path = os.path.join(self.index_dir, f"partial_index_{self.partial_index_count}.json")
-        
-        # saves the current inverted index to a JSON file
-        with open(partial_index_path, 'w', encoding='utf-8') as f:
-            json.dump(self.inverted_index, f)
+        partial_index_path = os.path.join(self.index_dir, f"partial_index_{self.partial_index_count}.jsonl")
 
+        with open(partial_index_path, 'w', encoding='utf-8') as f:
+            for term, postings in self.inverted_index.items():
+                json_line = json.dumps({term: postings})  # Convert each term to a JSON object
+                f.write(json_line + "\n")  # Write as a line in the file
+        
         print(f"Saved partial index: {partial_index_path}")
 
-        # clears the memory inverted index 
-        self.inverted_index.clear()
-
-        # increment the partial index counter
+        self.inverted_index.clear()  # Clear memory after saving
         self.partial_index_count += 1
+
 
     def compute_tf_idf(self):
         """Computes TF-IDF scores for each term in the index."""
@@ -179,7 +135,7 @@ class InvertedIndexer:
 
         for term, postings in self.inverted_index.items():
             df = self.document_frequencies[term]  
-            idf = math.log(total_documents / df) if df > 0 else 0  
+            idf = math.log10(total_documents / df) if df > 0 else 0  
 
             for doc_id, data in postings.items():
                 tf = 1 + math.log10(data["tf"]) if data["tf"] > 0 else 0  
@@ -187,56 +143,36 @@ class InvertedIndexer:
 
     def merge_indexes(self):
         """Merges all partial indexes into a final inverted index and computes TF-IDF."""
-        final_index = defaultdict(lambda: defaultdict(lambda: {"tf": 0, "tf-idf": 0}))  
+        final_index_path = os.path.join(self.index_dir, "final_index.jsonl")  # Use .jsonl format
 
-        # get partial indexes from directory
-        partial_files = glob.glob(os.path.join(self.index_dir, "partial_index_*.json"))
+        partial_files = glob.glob(os.path.join(self.index_dir, "partial_index_*.jsonl"))
+        
+        final_index = defaultdict(lambda: defaultdict(lambda: {"tf": 0, "tf-idf": 0}))
 
-        # loop through each partial index file
         for file in partial_files:
             with open(file, 'r', encoding='utf-8') as f:
-                partial_index = json.load(f)
+                for line in f:  # Read line-by-line
+                    try:
+                        entry = json.loads(line.strip())  # Parse each line as JSON
+                        term, postings = next(iter(entry.items()))
+                        
+                        for doc_id, data in postings.items():
+                            final_index[term][doc_id]["tf"] += data["tf"]
 
-            # merge the partial index into the final index
-            for term, postings in partial_index.items():
-                for doc_id, data in postings.items():
-                    final_index[term][doc_id]["tf"] += data["tf"]
+                    except json.JSONDecodeError:
+                        print(f"Skipping malformed JSON line in {file}")
 
         self.inverted_index = final_index
-
         self.compute_tf_idf()  
 
-        final_index_path = os.path.join(self.index_dir, "final_index.json")
-
-        # save final index path to json file
+        # Write final index in JSONL format
         with open(final_index_path, 'w', encoding='utf-8') as f:
-            json.dump(self.inverted_index, f)  
+            for term, postings in self.inverted_index.items():
+                json_line = json.dumps({term: postings})
+                f.write(json_line + "\n")
 
         print(f"Merged index saved: {final_index_path}")
-    
-    def simhash(self, text):
-        """Generate a 64-bit SimHash fingerprint for the given text."""
-        words = text.split()
-        hash_bits = np.zeros(64)
 
-        for word in words:
-            hash_value = int(hashlib.md5(word.encode()).hexdigest(), 16)
-            for i in range(64):
-                if (hash_value >> i) & 1:
-                    hash_bits[i] += 1
-                else:
-                    hash_bits[i] -= 1
-
-        fingerprint = 0
-        for i in range(64):
-            if hash_bits[i] > 0:
-                fingerprint |= (1 << i)
-
-        return fingerprint
-
-    def hamming_distance(self, hash1, hash2):
-        """Compute Hamming distance between two SimHash fingerprints."""
-        return bin(hash1 ^ hash2).count('1')
 
     def generate_report(self):
         """Generates a PDF report with indexing stats."""
