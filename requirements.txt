@@ -8,6 +8,7 @@ fastapi==0.115.11
 filelock==3.17.0
 fpdf==1.7.2
 fsspec==2025.3.0
+gunicorn==23.0.0
 h11==0.14.0
 httpcore==1.0.7
 httpx==0.28.1
@@ -53,4 +54,3 @@ typing_extensions==4.12.2
 urllib3==2.3.0
 uvicorn==0.34.0
 zstandard==0.23.0
-scikit-learn==1.6.1
