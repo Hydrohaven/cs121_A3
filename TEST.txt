@@ -1,0 +1,23 @@
+GOOD:
+artificial intelligence applications
+UCI research projects
+raymond klefstad
+self supervised learning
+pattis
+human interface
+big data in healthcare
+impact of AI on society
+marios
+uci ics courses
+
+BAD:
+deep learning and big data - used to do more results towards deep learning but now includes big data
+machine learning - used to run really slowly as there were a lot of machine learning datasets that were nearly the same, we increased performance by removing near duplicates
+health informatics - used to give us bad results but now provides us with data about a robot used for individuals with disabilities as well as a student interning for health informatics
+systems computing - used to give us bad results unrelated to systems, now we get results about networks and cyber security
+professor in ics - used to give more results towards general professors but now towards ics
+history of artificial intelligence - used to give information about ai, but now is more targetted towards history
+how to find internships - used to be inaccurate, now finds intnerships
+ai at uci - used to show general uci knowledge but now towards just ai at uci
+important research papers on NLP - would show research papers on different topics now on NLP
+research program - now provides us with many links on undergraduate research programs
