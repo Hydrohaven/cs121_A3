@@ -17,7 +17,7 @@ s3 = boto3.client(
 # S3 bucket details
 bucket_name = "your-bucket-name"  # Replace with your S3 bucket name
 s3_file_name = "final_index.json"
-index_path = "partial_test/final_index.json"
+index_path = "final_index.json"
 
 # Function to download the file from S3
 def download_index_from_s3():
@@ -51,11 +51,21 @@ async def index(request: Request):
 async def search(request: Request, query: str = Form(...)):
     start_time = time.perf_counter()
     results = list(enumerate(search_engine.boolean_and_search(query), 1))
+
+    summarized_results = []
+    for idx, result in results:
+        summary = search_engine.summarize_document(result)  
+        summarized_results.append({
+            "index": idx,
+            "result": result,
+            "summary": summary
+        })
+
     elapsed_time = time.perf_counter() - start_time
     formatted_elapsed_time = f"{elapsed_time:.4f}"
 
     return templates.TemplateResponse(
-        "index.html", {"request": request, "query": query, "results": results, "elapsed_time": formatted_elapsed_time}
+        "index.html", {"request": request, "query": query, "results": summarized_results, "elapsed_time": formatted_elapsed_time}
     )
 
 @app.get("/generate_report", response_class=FileResponse)
