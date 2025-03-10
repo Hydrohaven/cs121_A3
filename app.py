@@ -9,7 +9,7 @@ import uvicorn
 app = FastAPI()
 
 # Initialize the search engine with the path to the final index
-search_engine = SearchEngine("partial_test/final_index.jsol")
+search_engine = SearchEngine("partial_test/final_index.jsonl")
 
 # Jinja2 templates setup (for rendering HTML templates)
 templates = Jinja2Templates(directory="templates")
