@@ -4,6 +4,7 @@ import time
 import numpy as np
 import mmap
 from fpdf import FPDF
+from nltk.stem import wordnet
 from nltk.stem import WordNetLemmatizer
 import nltk
 
