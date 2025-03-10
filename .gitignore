@@ -5,3 +5,6 @@ partial_test/
 test.py
 read.py
 .DS_Store
+(old) partial/
+(old) partial_test/
+good_partial/
