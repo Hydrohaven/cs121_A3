@@ -127,9 +127,9 @@ class InvertedIndexer:
         if self.inverted_index:
             self.write_partial_index()
 
-    # def generate_ngrams(tokens, n):
-    #     """Generate n-grams from a list of tokens."""
-    #     return [" ".join(tokens[i:i+n]) for i in range(len(tokens) - n + 1)]
+    def generate_ngrams(self, tokens, n):
+        """Generate n-grams from a list of tokens."""
+        return [" ".join(tokens[i:i+n]) for i in range(len(tokens) - n + 1)]
 
     def extract_tokens(self, html_content):
         """Extracts important text from HTML, tokenizes and stems words."""
@@ -150,8 +150,21 @@ class InvertedIndexer:
             lemmatized_words = [self.lemmatizer.lemmatize(word) for word in words]  # Apply lemmatization
             tokens.extend(lemmatized_words)
 
-        ####
-        return tokens
+        # Generate 2-grams and 3-grams
+        bigrams = [" ".join(tokens[i:i+2]) for i in range(len(tokens) - 1)]
+        trigrams = [" ".join(tokens[i:i+3]) for i in range(len(tokens) - 2)]
+
+        # Debugging: Print n-gram samples
+        print(f"\n[DEBUG] Extracted {len(tokens)} unigrams.")
+        print(f"Unigrams (first 10): {tokens[:10]}")
+        
+        print(f"\n[DEBUG] Extracted {len(bigrams)} bigrams.")
+        print(f"Bigrams (first 10): {bigrams[:10]}")
+        
+        print(f"\n[DEBUG] Extracted {len(trigrams)} trigrams.")
+        print(f"Trigrams (first 10): {trigrams[:10]}")
+
+        return tokens + bigrams + trigrams
 
     def write_partial_index(self):
         """Writes a partial inverted index to disk using JSONL format."""
@@ -160,6 +173,14 @@ class InvertedIndexer:
             return  # Don't write an empty index
         
         partial_index_path = os.path.join(self.index_dir, f"partial_index_{self.partial_index_count}.jsonl")
+
+        # Debugging: Print part of the index to verify n-grams
+        print(f"\n[DEBUG] Sample from Partial Index ({self.partial_index_count}):")
+        for i, (term, postings) in enumerate(self.inverted_index.items()):
+            print(f"  {term}: {list(postings.keys())[:3]}")  # Print first 3 document IDs for each term
+            if i > 10:  # Stop after 10 terms
+                break
+
 
         with open(partial_index_path, 'w', encoding='utf-8') as f:
             for term, postings in self.inverted_index.items():
@@ -301,7 +322,7 @@ class InvertedIndexer:
 
 if __name__ == "__main__":
     input_directory = "developer"
-    output_directory = "hash_test"
+    output_directory = "gram_test"
 
     indexer = InvertedIndexer(input_directory, output_directory)
     indexer.process_files()  # Build inverted index

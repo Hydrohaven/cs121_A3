@@ -47,12 +47,21 @@ class SearchEngine:
         """Loads the inverted index from final_index.json."""
         with open(self.index_path, 'r', encoding='utf-8') as f:
             return json.load(f)
+
+    def generate_ngrams(self, tokens, n):
+        """Generate n-grams from a list of tokens."""
+        return [" ".join(tokens[i:i+n]) for i in range(len(tokens) - n + 1)]
         
 
     def tokenize_and_stem(self, query):
         """Tokenizes and stems a search query."""
         words = re.findall(r'\b[a-zA-Z0-9]+\b', query.lower())  # Extract words
-        return [self.stemmer.stem(word) for word in words]  # Apply stemming
+        stemmed_words = [self.stemmer.stem(word) for word in words]  
+
+        bigrams = [" ".join(words[i:i+2]) for i in range(len(words) - 1)]
+        trigrams = [" ".join(words[i:i+3]) for i in range(len(words) - 2)]
+
+        return stemmed_words + bigrams + trigrams  # Apply stemming
 
 
     def boolean_and_search(self, query):
