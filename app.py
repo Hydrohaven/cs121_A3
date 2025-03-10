@@ -23,7 +23,8 @@ index_path = "final_index.json"
 def download_index_from_s3():
     try:
         print(f"Downloading {s3_file_name} from S3...")
-        s3.download_file(bucket_name, s3_file_name, index_path)
+        with open(index_path, 'wb') as f:
+            s3.download_fileobj(bucket_name, s3_file_name, f)  # Stream the file directly to disk
         print(f"Downloaded {s3_file_name} successfully!")
     except Exception as e:
         print(f"Error downloading file from S3: {e}")
@@ -50,7 +51,7 @@ async def index(request: Request):
 @app.post("/search", response_class=HTMLResponse)
 async def search(request: Request, query: str = Form(...)):
     start_time = time.perf_counter()
-    results = list(enumerate(search_engine.boolean_and_search(query), 1))
+    results = list(enumerate(search_engine.boolean_and_search(query), 1))[:50]
 
     summarized_results = []
     for idx, result in results:
