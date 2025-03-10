@@ -6,8 +6,8 @@ from fastapi.templating import Jinja2Templates
 import time
 from search import SearchEngine
 import uvicorn
-import aiohttp
-import asyncio
+# import aiohttp
+# import asyncio
 
 # Set up AWS S3 client using your AWS credentials (either through environment variables or hardcoded)
 s3 = boto3.client(
