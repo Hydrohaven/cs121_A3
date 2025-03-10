@@ -15,7 +15,7 @@ s3 = boto3.client(
 )
 
 # S3 bucket details
-bucket_name = "your-bucket-name"  # Replace with your S3 bucket name
+bucket_name = "my-fastapi-indexes"  
 s3_file_name = "final_index.json"
 index_path = "final_index.json"
 
@@ -37,7 +37,7 @@ if not os.path.exists(index_path):
 app = FastAPI()
 
 # Initialize the search engine with the path to the final index
-search_engine = SearchEngine("partial_test/final_index.json")
+search_engine = SearchEngine("final_index.json")
 
 # Jinja2 templates setup (for rendering HTML templates)
 templates = Jinja2Templates(directory="templates")
