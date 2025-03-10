@@ -5,6 +5,7 @@ import numpy as np
 import requests
 from fpdf import FPDF
 from nltk.stem import PorterStemmer
+from transformers import pipeline
 
 class SearchEngine:
     def __init__(self, index_path):

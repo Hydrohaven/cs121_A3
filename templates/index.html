@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZotFreak</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+        .container {
+            width: 50%;
+            margin: 0 auto;
+            padding-top: 50px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .search-box {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .search-box input[type="text"] {
+            padding: 10px;
+            width: 60%;
+            font-size: 16px;
+        }
+        .search-box button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            margin-left: 10px;
+        }
+        .search-box button:hover {
+            background-color: #2a87ea;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .result-item {
+            margin: 5px 0;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+        .result-item a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .result-item a:hover {
+            text-decoration: underline;
+        }
+        .report-button {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 10px;
+            text-align: center;
+            background-color: #007bff;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+        .report-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ZotFreak</h1>
+
+        <!-- Search Form -->
+        <div class="search-box">
+            <form action="/search" method="POST">
+                <input type="text" name="query" placeholder="Enter search query" required>
+                <button type="submit">Search</button>
+            </form>
+        </div>
+
+        {% if query %}
+            <h3>Results for: "{{ query }}"</h3>
+            <p>Elapsed time: {{ elapsed_time }} seconds</p>
+        {% endif %}
+
+        {% if results %}
+            <div class="results">
+                {% for rank, doc_id in results %}
+                    <div class="result-item">
+                        <a href="{{ doc_id }}" target="_blank">{{ rank }}. {{ doc_id }}</a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% elif query %}
+            <p>No results found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
