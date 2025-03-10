@@ -5,7 +5,6 @@ import numpy as np
 import requests
 from fpdf import FPDF
 from nltk.stem import PorterStemmer
-from transformers import pipeline
 
 class SearchEngine:
     def __init__(self, index_path):
@@ -93,7 +92,6 @@ class SearchEngine:
         )
 
         return ranked_results
-
 
     def search(self, query):
         """Performs a search and returns the top 5 document URLs."""        
