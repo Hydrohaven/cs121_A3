@@ -27,10 +27,10 @@ Ensure 'final_index.jsonl' is in a directory titled 'partial_index'.
 
 ### Step 5: Run Search Engine (Web GUI)
 ```
-TBD
+uvicorn app:app --reload
 ```
 
 ### Step 6: Querying the Search Engine
-TBD
+Type into the input box and click search to display the top 50 results of that given query.
 
 *Note: The first query will always take 2-3 seconds due to offset loading to ensure subsequent queries are always O(1)
