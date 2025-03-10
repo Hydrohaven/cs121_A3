@@ -283,9 +283,11 @@ class InvertedIndexer:
         xor_result = hash1 ^ hash2  # XOR to find different bits
         return bin(xor_result).count('1')  # Count the number of 1s
 
-
-    def generate_report(self):
-        """Generates a PDF report with indexing stats."""
+    # =============================
+    # OUTDATED FOR NEW JSONL FORMAT
+    # =============================
+    def generate_report(self): 
+        """DEPRECATED, Generates a PDF report with indexing stats."""
         if os.path.exists(self.report_file):
             os.remove(self.report_file)
 
@@ -322,7 +324,7 @@ class InvertedIndexer:
 
 if __name__ == "__main__":
     input_directory = "developer"
-    output_directory = "gram_test"
+    output_directory = "partial_index"
 
     indexer = InvertedIndexer(input_directory, output_directory)
     indexer.process_files()  # Build inverted index

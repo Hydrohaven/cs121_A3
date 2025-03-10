@@ -208,7 +208,7 @@ class SearchEngine:
         
 
 if __name__ == "__main__":
-    search_engine = SearchEngine("margo_hash/final_index.jsonl")  # Use JSONL format
+    search_engine = SearchEngine("partial_index/final_index.jsonl")  # Use JSONL format
 
     choice = input("\nWould you like to run the searcher or generate the report? (run/report): ").strip().lower()
 
