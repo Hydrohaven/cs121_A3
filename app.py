@@ -25,11 +25,11 @@ index_path = "final_index.json"
 def download_index_from_s3():
     try:
         print(f"Downloading {s3_file_name} from S3...")
-        with open(index_path, 'wb') as f:
-            s3.download_fileobj(bucket_name, s3_file_name, f)  # Stream the file directly to disk
+        s3.download_file(bucket_name, s3_file_name, index_path)
         print(f"Downloaded {s3_file_name} successfully!")
     except Exception as e:
         print(f"Error downloading file from S3: {e}")
+        raise
 
 # Ensure that the final_index.json exists, or regenerate/download it
 if not os.path.exists(index_path):
