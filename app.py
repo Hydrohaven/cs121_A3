@@ -6,6 +6,8 @@ from fastapi.templating import Jinja2Templates
 import time
 from search import SearchEngine
 import uvicorn
+import aiohttp
+import asyncio
 
 # Set up AWS S3 client using your AWS credentials (either through environment variables or hardcoded)
 s3 = boto3.client(
@@ -48,18 +50,64 @@ templates = Jinja2Templates(directory="templates")
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+# Fetch content asynchronously
+# async def fetch_content(session, url: str) -> str:
+#     async with session.get(url) as response:
+#         # If response is successful, extract content (assuming Wikipedia)
+#         if response.status == 200:
+#             return await response.text()
+#         return ""
+
+# # Summarize content asynchronously
+# async def summarize_content(url: str) -> str:
+#     async with aiohttp.ClientSession() as session:
+#         content = await fetch_content(session, url)
+#         return search_engine.summarize_document(content)
+
+# @app.post("/search", response_class=HTMLResponse)
+# async def search(request: Request, query: str = Form(...)):
+#     start_time = time.perf_counter()
+
+#     # Perform the search (returns a list of URLs or search results)
+#     results = list(enumerate(search_engine.boolean_and_search(query), 1))[:50]
+
+#     # Create a list of tasks for summarizing each result
+#     tasks = [summarize_content(result) for _, result in results]
+
+#     # Use asyncio.gather to run the tasks concurrently
+#     summarized_results = await asyncio.gather(*tasks)
+
+#     # Package results with summaries
+#     final_results = [
+#         {"index": idx, "result": result, "summary": summary}
+#         for (idx, result), summary in zip(results, summarized_results)
+#     ]
+
+#     elapsed_time = time.perf_counter() - start_time
+#     formatted_elapsed_time = f"{elapsed_time:.4f}"
+
+#     # Pass the summarized results to the template
+#     return templates.TemplateResponse(
+#         "index.html", {
+#             "request": request,
+#             "query": query,
+#             "results": final_results,
+#             "elapsed_time": formatted_elapsed_time
+#         }
+#     )
+
 @app.post("/search", response_class=HTMLResponse)
 async def search(request: Request, query: str = Form(...)):
     start_time = time.perf_counter()
     results = list(enumerate(search_engine.boolean_and_search(query), 1))[:50]
 
+    # Temporarily remove the summarization part
     summarized_results = []
     for idx, result in results:
-        summary = search_engine.summarize_document(result)  
         summarized_results.append({
             "index": idx,
             "result": result,
-            "summary": summary
+            "summary": ""  # Empty summary to isolate the problem
         })
 
     elapsed_time = time.perf_counter() - start_time
@@ -68,11 +116,6 @@ async def search(request: Request, query: str = Form(...)):
     return templates.TemplateResponse(
         "index.html", {"request": request, "query": query, "results": summarized_results, "elapsed_time": formatted_elapsed_time}
     )
-
-@app.get("/generate_report", response_class=FileResponse)
-async def generate_report():
-    search_engine.generate_report()
-    return FileResponse("search_report.pdf", media_type="application/pdf", filename="search_report.pdf")
 
 if __name__ == "__main__":
     # Get the port from the environment variable or use 8000 as a fallback
