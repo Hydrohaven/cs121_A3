@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZotFreak</title>
+    <title>AntSearch</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -80,7 +80,7 @@
 <body>
 
     <div class="container">
-        <h1>ZotFreak</h1>
+        <h1>AntSearch</h1>
 
         <!-- Search Form -->
         <div class="search-box">
@@ -99,7 +99,7 @@
             <div class="results">
                 {% for result in results %}
                     <div class="result-item">
-                        <a href="{{ result.result }}" target="_blank">{{ result.index }}. {{ result.result }}</a>
+                        <a href="{{ result.doc_id }}" target="_blank">{{ result.rank }}. {{ result.doc_id }}</a>
                     </div>
                 {% endfor %}
             </div>
